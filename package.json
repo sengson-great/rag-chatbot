@@ -12,7 +12,7 @@
     "@ai-sdk/google": "^3.0.71",
     "@ai-sdk/groq": "^2.0.29",
     "@ai-sdk/react": "^3.0.179",
-    "@clerk/nextjs": "^6.35.2",
+    "@clerk/nextjs": "^6.39.3",
     "@hookform/resolvers": "^5.2.2",
     "@huggingface/inference": "^4.13.3",
     "@langchain/core": "^1.1.45",
