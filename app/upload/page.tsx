@@ -11,6 +11,7 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 import {
   processFile,
@@ -32,6 +33,8 @@ export default function UploadPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [sources, setSources] = useState<string[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState("");
 
   const fetchSources = useCallback(async () => {
     setLoadingSources(true);
@@ -93,8 +96,33 @@ export default function UploadPage() {
 
   const handleSubmit = async (formData: FormData) => {
     setUploading(true);
+    setProgress(2);
+    setProgressText("Preparing file...");
     setMessage("");
     setMessageType(null);
+    
+    // Small paint tick to force React UI re-rendering before blocking tasks
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    
+    // Simulated progress progression
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev < 25) {
+          setProgressText("Reading file data...");
+          return prev + Math.random() * 5 + 2;
+        } else if (prev < 55) {
+          setProgressText("Parsing document content...");
+          return prev + Math.random() * 3 + 1;
+        } else if (prev < 85) {
+          setProgressText("Generating vector embeddings...");
+          return prev + Math.random() * 1 + 0.5;
+        } else if (prev < 97) {
+          setProgressText("Indexing knowledge base...");
+          return prev + Math.random() * 0.2 + 0.1;
+        }
+        return prev;
+      });
+    }, 300);
     
     try {
       // First, debug what's in the formData
@@ -111,6 +139,8 @@ export default function UploadPage() {
       }
       
       if (debugResult.entries === 0) {
+        clearInterval(interval);
+        setProgress(0);
         setMessage("No form data was received.");
         setMessageType("error");
         return;
@@ -119,15 +149,26 @@ export default function UploadPage() {
       // Then process the file
       const result = await processFile(formData);
       
+      clearInterval(interval);
+      
       if (result.success) {
+        setProgress(100);
+        setProgressText("Successfully indexed!");
         setMessage(result.message ?? "File uploaded successfully.");
         setMessageType("success");
         fetchSources(); // Refresh list
+        // Brief delay before removing progress bar to show 100%
+        await new Promise((resolve) => setTimeout(resolve, 1200));
       } else {
+        setProgress(0);
+        setProgressText("");
         setMessage(result.error ?? "Upload failed.");
         setMessageType("error");
       }
     } catch (error) {
+      clearInterval(interval);
+      setProgress(0);
+      setProgressText("");
       console.error('Upload error:', error);
       setMessage(`Upload failed: ${error}`);
       setMessageType("error");
@@ -171,7 +212,15 @@ export default function UploadPage() {
       <section className="rounded-[2.5rem] border glass-card p-8 sm:p-10 shadow-2xl relative overflow-hidden">
         <div className="absolute -bottom-24 -right-24 size-64 bg-primary/5 blur-[100px] rounded-full -z-10" />
         
-        <form action={handleSubmit} className="space-y-8">
+        <form 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!selectedFile) return;
+            const formData = new FormData(e.currentTarget);
+            await handleSubmit(formData);
+          }} 
+          className="space-y-8"
+        >
           <div className="space-y-3">
             <label htmlFor="file" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Select Document
@@ -232,6 +281,22 @@ export default function UploadPage() {
               </div>
             )}
           </button>
+
+          {uploading && (
+            <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex justify-between items-end">
+                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                  {progressText}
+                </span>
+                <span className="text-sm font-bold text-primary tabular-nums">{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2 bg-primary/10" />
+            </div>
+          )}
         </form>
 
         {message && (

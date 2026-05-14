@@ -638,15 +638,27 @@ export const PromptInput = ({
     };
   }, [add, globalDrop]);
 
+  // Guard files reference to perform cleanup exclusively on genuine component unmount
+  const filesRef = useRef(files);
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
   useEffect(
     () => () => {
       if (!usingProvider) {
-        for (const f of files) {
-          if (f.url) URL.revokeObjectURL(f.url);
+        for (const f of filesRef.current) {
+          if (f.url) {
+            try {
+              URL.revokeObjectURL(f.url);
+            } catch (e) {
+              // Silent catch in case browser already cleaned it up
+            }
+          }
         }
       }
     },
-    [usingProvider, files]
+    [usingProvider]
   );
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -656,14 +668,19 @@ export const PromptInput = ({
   };
 
   const convertBlobUrlToDataUrl = async (url: string): Promise<string> => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn("PromptInput: Failed to convert blob to dataURL, falling back to original url.", err);
+      return url; // Return original safely to prevent promise rejection crash
+    }
   };
 
   const ctx = useMemo<AttachmentsContext>(
