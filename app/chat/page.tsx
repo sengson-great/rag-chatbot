@@ -1,9 +1,9 @@
 // src/app/chat/page.tsx
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
-import { Bot, FileText, Sparkles } from "lucide-react";
+import { Bot, FileText, Sparkles, AlertCircle } from "lucide-react";
 import {
   Conversation,
   ConversationContent,
@@ -23,7 +23,13 @@ import { Loader } from "@/components/ai-elements/loader";
 
 export default function RAGChatBot() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, error } = useChat();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom whenever messages array reference changes (including during streaming chunks)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, status]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     if (!message.text) {
@@ -82,6 +88,22 @@ export default function RAGChatBot() {
                   <Loader />
                 </div>
               )}
+
+              {error && (
+                <div className="mt-4 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 flex gap-3 items-start animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <h4 className="font-semibold text-destructive text-sm leading-none">API Notification</h4>
+                    <p className="text-xs text-destructive/90 leading-relaxed">
+                      {error.message.includes("Quota exceeded") 
+                        ? "Google Gemini Free Tier API limit reached. Please wait a minute before sending another message." 
+                        : error.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} className="h-px w-full opacity-0 pointer-events-none" />
             </ConversationContent>
           )}
           <ConversationScrollButton className="bottom-24" />
