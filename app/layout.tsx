@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RAG Chatbot",
-  description: "Upload documents and chat with your knowledge base.",
+  title: "Speedbook Chatbot",
+  description: "Ask questions and get instant answers from Speedbook company documents using AI.",
 };
 
 export default function RootLayout({
