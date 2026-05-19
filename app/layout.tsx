@@ -15,8 +15,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Speedbook Chatbot",
+  title: "SpeedBook Assistant",
   description: "Ask questions and get instant answers from Speedbook company documents using AI.",
+  openGraph: {
+    title: "SpeedBook Assistant",
+    description: "Ask questions and get instant answers from Speedbook company documents using AI.",
+    url: "https://speedbookchatbot.vercel.app/chat",
+    siteName: "SpeedBook Assistant",
+    images: [
+      {
+        url: "/logo.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "SpeedBook Assistant Logo",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SpeedBook Assistant",
+    description: "Ask questions and get instant answers from Speedbook company documents using AI.",
+    images: ["/logo.jpeg"],
+  },
 };
 
 export default function RootLayout({
